@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>رحلة تعلم الإنجليزية ✨</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+body {
+  font-family: Tahoma, Arial, sans-serif;
+  background: linear-gradient(to right,#a1c4fd,#c2e9fb);
+  text-align: center;
+  padding: 20px;
+  overflow-x: hidden;
+}
+.hidden { display: none; }
+button {
+  padding: 12px 25px;
+  font-size: 20px;
+  background: #ff9671;
+  color: white;
+  border: none;
+  border-radius: 30px;
+  margin: 10px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+button:hover { background: #ff6f91; }
+.lesson {
+  background: white;
+  padding: 20px;
+  margin: 20px auto;
+  border-radius: 20px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  max-width: 600px;
+}
+.lesson img {
+  width: 200px;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 20px;
+  margin-bottom: 15px;
+}
+#progress-container {
+  width: 90%;
+  background: #ddd;
+  height: 20px;
+  margin: 20px auto;
+  border-radius: 10px;
+  overflow: hidden;
+}
+#progress-bar {
+  height: 100%;
+  width: 0%;
+  background: #845ec2;
+  transition: width 0.5s ease;
+}
+#progress-text {
+  font-size: 18px;
+  margin-bottom: 10px;
+  color: #333;
+}
+#certificatePage {
+  background: #fff;
+  padding: 30px;
+  border-radius: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  max-width: 700px;
+  margin: 50px auto;
+  text-align: center;
+}
+#certificatePage h1 {
+  color: #4CAF50;
+  font-size: 40px;
+  margin-bottom: 10px;
+}
+#certificatePage h2 {
+  font-size: 28px;
+  color: #333;
+}
+#certificatePage p {
+  font-size: 20px;
+  color: #555;
+}
+</style>
+</head>
+<body>
+<!-- صفحة البداية -->
+<div id="startPage">
+  <h1>✨ أهلاً بك في رحلة تعلم الإنجليزية ✨</h1>
+  <button onclick="startLessons()">ابدأ الآن 🚀</button>
+</div>
+
+<!-- صفحة الدروس -->
+<div id="lessonPage" class="hidden">
+  <div id="progress-text">0%</div>
+  <div id="progress-container"><div id="progress-bar"></div></div>
+  <div id="lessonArea"></div>
+  <button id="nextButton" onclick="next()">التالي ➡️</button>
+  <div id="timer" style="font-size: 20px; color: red; margin-top: 10px;"></div>
+</div>
+
+<!-- صفحة الشهادة -->
+<div id="certificatePage" class="hidden">
+  <h1>مبروك!</h1>
+  <p>لقد أكملت رحلتك التعليمية بنجاح!</p>
+  <h2>نجمنا المبدع!</h2>
+  <button onclick="downloadCertificate()">تحميل الشهادة 📄</button>
+  <button onclick="restart()">ابدأ من جديد 🔄</button>
+</div>
+
+<!-- صوت التصفيق -->
+<audio id="clapSound" src="https://www.fesliyanstudios.com/play-mp3/387" preload="auto"></audio>
+
+<script>
+// قائمة الكلمات + الصور الواقعية
+const lessons = [
+  {word: "Apple", meaning: "تفاحة", image: "https://upload.wikimedia.org/wikipedia/commons/1/15/Red_Apple.jpg"},
+  {word: "Ball", meaning: "كرة", image: "https://upload.wikimedia.org/wikipedia/commons/6/6d/Soccer_ball.svg"},
+  {word: "Cat", meaning: "قطة", image: "https://upload.wikimedia.org/wikipedia/commons/3/3a/Cat03.jpg"},
+  {word: "Dog", meaning: "كلب", image: "https://upload.wikimedia.org/wikipedia/commons/7/7e/Dog_face.png"},
+  {word: "Book", meaning: "كتاب", image: "https://upload.wikimedia.org/wikipedia/commons/8/89/Book.png"},
+  {word: "Pen", meaning: "قلم", image: "https://upload.wikimedia.org/wikipedia/commons/0/0b/Blue_pen.png"},
+  {word: "Chair", meaning: "كرسي", image: "https://upload.wikimedia.org/wikipedia/commons/3/37/Chair.png"},
+  {word: "Table", meaning: "طاولة", image: "https://upload.wikimedia.org/wikipedia/commons/7/7d/Table.png"},
+  {word: "Bag", meaning: "حقيبة", image: "https://upload.wikimedia.org/wikipedia/commons/9/9d/Backpack.jpg"},
+  {word: "Shoe", meaning: "حذاء", image: "https://upload.wikimedia.org/wikipedia/commons/f/f9/Shoes.png"},
+  // <<< سأكمل بقية الكلمات فوق 100 كلمة في البوكسات القادمة >>>
+];
+// متغيرات النظام
+let currentIndex = parseInt(localStorage.getItem('currentLesson')) || 0;
+let isQuiz = false;
+let timerInterval;
+
+// بدء الدروس
+function startLessons() {
+  document.getElementById('startPage').classList.add('hidden');
+  document.getElementById('lessonPage').classList.remove('hidden');
+  showLesson();
+}
+
+// عرض الدرس أو الاختبار
+function showLesson() {
+  updateProgress();
+  clearTimer();
+  document.getElementById('timer').innerHTML = '';
+
+  if ((currentIndex + 1) % 3 === 0) {
+    showQuiz();
+  } else {
+    const lesson = lessons[currentIndex];
+    document.getElementById('lessonArea').innerHTML = `
+      <div class="lesson">
+        <img src="${lesson.image}" alt="صورة ${lesson.word}">
+        <h2>${currentIndex + 1} من ${lessons.length}</h2>
+        <h1>${lesson.word}</h1>
+        <p>${lesson.meaning}</p>
+      </div>
+    `;
+    document.getElementById('nextButton').style.display = 'inline-block';
+    isQuiz = false;
+  }
+}
+
+// زر التالي
+function next() {
+  if (!isQuiz) {
+    currentIndex++;
+    if (currentIndex >= lessons.length) {
+      showCertificate();
+    } else {
+      localStorage.setItem('currentLesson', currentIndex);
+      showLesson();
+    }
+  }
+}
+
+// عرض اختبار النطق
+function showQuiz() {
+  const lesson = lessons[currentIndex];
+  document.getElementById('lessonArea').innerHTML = `
+    <div class="lesson">
+      <h2>اختبار نطق</h2>
+      <h1>${lesson.word}</h1>
+      <button onclick="startRecognition('${lesson.word}')">🎤 اضغط وتكلم</button>
+    </div>
+  `;
+  document.getElementById('nextButton').style.display = 'none';
+  isQuiz = true;
+
+  // تفعيل المؤقت بعد الدرس 25
+  if (currentIndex >= 24) {
+    startTimer(30); // 30 ثانية
+  }
+}
+// تفعيل التعرف على الصوت
+function startRecognition(correctWord) {
+  if (!('webkitSpeechRecognition' in window)) {
+    alert('متصفحك لا يدعم التعرف على الصوت!');
+    return;
+  }
+
+  const recognition = new webkitSpeechRecognition();
+  recognition.lang = 'en-US';
+  recognition.start();
+
+  recognition.onresult = function(event) {
+    const result = event.results[0][0].transcript.trim().toLowerCase();
+    if (result === correctWord.toLowerCase()) {
+      document.getElementById('clapSound').play();
+      clearTimer();
+      alert('✅ صحيح! أحسنت!');
+      currentIndex++;
+    } else {
+      alert('❌ خطأ! حاول مرة أخرى.');
+      if (currentIndex > 0) currentIndex--;
+    }
+
+    if (currentIndex >= lessons.length) {
+      showCertificate();
+    } else {
+      localStorage.setItem('currentLesson', currentIndex);
+      showLesson();
+    }
+  };
+}
+
+// بدء مؤقت النطق
+function startTimer(seconds) {
+  let timeLeft = seconds;
+  document.getElementById('timer').innerText = `⏰ الوقت المتبقي: ${timeLeft} ثانية`;
+
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    document.getElementById('timer').innerText = `⏰ الوقت المتبقي: ${timeLeft} ثانية`;
+
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      alert('⏰ انتهى الوقت! حاول مرة أخرى.');
+      if (currentIndex > 0) currentIndex--;
+      localStorage.setItem('currentLesson', currentIndex);
+      showLesson();
+    }
+  }, 1000);
+}
+
+// ايقاف المؤقت
+function clearTimer() {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+}
+
+// تحديث شريط التقدم
+function updateProgress() {
+  const progress = (currentIndex / lessons.length) * 100;
+  document.getElementById('progress-bar').style.width = progress + "%";
+  document.getElementById('progress-text').innerText = progress.toFixed(0) + "%";
+}
+
+// عرض الشهادة
+function showCertificate() {
+  localStorage.removeItem('currentLesson');
+  document.getElementById('lessonPage').classList.add('hidden');
+  document.getElementById('certificatePage').classList.remove('hidden');
+}
+
+// تحميل الشهادة كصورة
+function downloadCertificate() {
+  html2canvas(document.getElementById('certificatePage')).then(function(canvas) {
+    const link = document.createElement('a');
+    link.download = 'شهادة_التخرج.png';
+    link.href = canvas.toDataURL();
+    link.click();
+  });
+}
+
+// إعادة الدورة
+function restart() {
+  location.reload();
+}
+</script>
+
+</body>
+</html>
